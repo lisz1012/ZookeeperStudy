@@ -46,7 +46,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StatCallback, Async
 
     @Override
     public void processResult(int rc, String path, Object ctx, Stat stat) {
-        if (stat != null) { // stat != null 代表节点已经存在了, 那就再拿数据，再次回调
+        if (stat != null) { // stat != null 代表zk.exists方法发现节点已经存在了, 那就再拿数据，再次回调
             zk.getData("/AppConf", this, this, "sdfs");
         }
     }
