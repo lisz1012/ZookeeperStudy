@@ -1,4 +1,4 @@
-package com.lisz.zookeeper;
+package com.lisz.zookeeper.config;
 
 import com.lisz.zookeeper.config.MyConf;
 import org.apache.zookeeper.AsyncCallback;

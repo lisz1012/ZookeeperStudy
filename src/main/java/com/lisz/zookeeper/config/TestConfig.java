@@ -1,6 +1,5 @@
 package com.lisz.zookeeper.config;
 
-import com.lisz.zookeeper.WatchCallback;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
