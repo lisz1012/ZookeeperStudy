@@ -33,7 +33,8 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
         this.zk = zk;
     }
 
-    public void tryLock() { // react 模型，返回值是void
+    public void tryLock() { // react 模型，返回值是void，不需要是boolean的返回值，只要阻塞着就说明没有锁上，一旦自己是队列第一个，await就会往下走
+        //if (zk.getData("/"))这里可以判断一下自己这个线程有没有获得锁，有锁了就不要再去抢锁了
         try {
             zk.create("/lock", threadName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL, this, "ctx");
             latch.await();
@@ -63,6 +64,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
             case NodeCreated:
                 break;
             case NodeDeleted:
+                // 如果第一个节点被删除了，释放锁，则只有第二个收到了回调的事件，因为zk.exists()注册的时候用的是"/" + children.get(index - 1)；如果中间的某一个挂了，也能造成后面的那个收到通知，从而让后面的监控挂掉的这个节点的前面的那个节点
                 zk.getChildren("/", false, this, "adf"); //只要是关于"/"的，就不需要watch
                 break;
             case NodeDataChanged:
@@ -83,7 +85,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
         if (name != null) {
             System.out.println(threadName + " creates node " + name);
             pathName = name;
-            zk.getChildren("/", false, this, "adf");
+            zk.getChildren("/", false, this, "adf"); //不关注锁目录的情况，所以这里不需要watch。但是回调是要写的，要判断自己是不是第一名，是的话要countDown获得锁，然后开始干活
             //latch.countDown();
         }
 
@@ -102,7 +104,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
         if (index == 0) {
             System.out.println(threadName + " I'm the first...");
             try {
-                zk.setData("/", threadName.getBytes(), -1); // 加了这么一步：谁获得锁了，就把线程信息写到锁目录里，让第一个线程别跑太快。但更关键的是重入锁，抢到了就做个标记。设置数这里不需要callback
+                zk.setData("/", threadName.getBytes(), -1); // 加了这么一步：相当于排个队。谁获得锁了，就把线程信息写到锁目录里，让第一个线程别跑太快。但更关键的是重入锁，抢到了就做个标记。设置数这里不需要callback
             } catch (KeeperException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -110,8 +112,9 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
             }
             latch.countDown(); //是当前队列的第一个，让 tryLock()继续往下走，并顺利退出，开始干活的业务
         } else {
-            // 盯住index - 1，也就是前一个
-            // 这里的这个watcher一定要写，不能是false，第二个this也一定要写，判断exits的一瞬间前面的节点挂（超时消失）了，有可能exists监控成功有可能不成功
+            // 注册，盯住index - 1，也就是前一个
+            // 为的是放一个watcher，这里的这个watcher一定要写，不能是false，第二个this也一定要写，判断exits的一瞬间前面的节点挂（超时消失）了，有可能exists监控成功有可能不成功。回调可以不写
+            // 一旦前一个释放锁了，也就是前一个临时节点被删除了，由于watcher已经传进去了，所以会监控到前一个（index-1）节点被删除了，然后又会调用本方法，去判断当前节点是不是第一个
             zk.exists("/" + children.get(index - 1), this, this, "adf");
         }
     }
