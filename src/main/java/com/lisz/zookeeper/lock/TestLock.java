@@ -32,7 +32,7 @@ public class TestLock {
                 WatchCallback watchCallback = new WatchCallback(zk);
                 String threadName = Thread.currentThread().getName();
                 watchCallback.setThreadName(threadName);
-                //每个线程去抢锁
+                //每个线程都去抢锁, 只有抢到锁的线程才会往下执行
                 watchCallback.tryLock();
                 //干活
                 System.out.println(threadName + " working..");
