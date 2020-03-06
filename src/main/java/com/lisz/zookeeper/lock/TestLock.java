@@ -41,7 +41,7 @@ public class TestLock {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }*/
-                //释放锁
+                //释放锁。就是删除临时有序节点并countdown
                 watchCallback.unLock();
             }).start();
         }
