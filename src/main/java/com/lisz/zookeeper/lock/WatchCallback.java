@@ -34,7 +34,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
     }
 
     public void tryLock() { // react 模型，返回值是void，不需要是boolean的返回值，只要阻塞着就说明没有锁上，一旦自己是队列第一个，await就会往下走
-        //if (zk.getData("/"))这里可以判断一下自己这个线程有没有获得锁，有锁了就不要再去抢锁了
+        //if (zk.getData("/"))这里可以判断一下自己这个线程有没有获得锁，有锁了就不要再去抢锁了。
         try {
             zk.create("/lock", threadName.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL, this, "ctx");
             latch.await();
