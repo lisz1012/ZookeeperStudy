@@ -65,6 +65,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
                 break;
             case NodeDeleted:
                 // 如果第一个节点被删除了，释放锁，则只有第二个收到了回调的事件，因为zk.exists()注册的时候用的是"/" + children.get(index - 1)；如果中间的某一个挂了，也能造成后面的那个收到通知，从而让后面的监控挂掉的这个节点的前面的那个节点
+                // 这里主要是执行getChildren触发它的callback，拿到所有children的list
                 zk.getChildren("/", false, this, "adf"); //只要是关于"/"的，就不需要watch
                 break;
             case NodeDataChanged:
