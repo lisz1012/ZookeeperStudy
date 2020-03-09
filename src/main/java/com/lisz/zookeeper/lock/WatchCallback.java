@@ -87,6 +87,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
             System.out.println(threadName + " creates node " + name);
             pathName = name;
             zk.getChildren("/", false, this, "adf"); //不关注锁目录的情况，所以这里不需要watch。但是回调是要写的，要判断自己是不是第一名，是的话要countDown获得锁，然后开始干活
+            // 这里主要是执行getChildren触发它的callback，拿到所有children的list
             //latch.countDown();
         }
 
