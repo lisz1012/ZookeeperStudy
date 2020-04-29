@@ -65,7 +65,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
                 break;
             case NodeDeleted:
                 // 如果第一个节点被删除了，释放锁，则只有第二个收到了回调的事件，因为zk.exists()注册的时候用的是"/" + children.get(index - 1)；如果中间的某一个挂了，也能造成后面的那个收到通知，从而让后面的监控挂掉的这个节点的前面的那个节点
-                // 这里主要是执行getChildren触发它的callback，拿到所有children的list
+                // 这里主要是执行getChildren触发它的callback，拿到所有children的list，然后会判断当前线程的节点是不是第一个，是第一个就得到锁，否则就盯住前一个，前一个一旦删除了就通知下一个
                 zk.getChildren("/", false, this, "adf"); //只要是关于"/"的，就不需要watch
                 break;
             case NodeDataChanged:
@@ -116,7 +116,7 @@ public class WatchCallback implements Watcher, AsyncCallback.StringCallback, Asy
         } else {
             // 注册，盯住index - 1，也就是前一个
             // 为的是放一个watcher，这里的这个watcher一定要写，不能是false，第二个this也一定要写，判断exits的一瞬间前面的节点挂（超时消失）了，有可能exists监控成功有可能不成功。回调可以不写
-            // 一旦前一个释放锁了，也就是前一个临时节点被删除了，由于watcher已经传进去了，所以会监控到前一个（index-1）节点被删除了，然后又会调用本方法，去判断当前节点是不是第一个
+            // 一旦前一个释放锁了，也就是前一个临时节点被删除了，由于watcher已经传进去了，所以会监控到前一个（index-1）节点被删除了，然后由于case: NodeDeleted那里还有一个zk.getChildren，所以又会调用本方法，去判断当前节点是不是第一个
             zk.exists("/" + children.get(index - 1), this, this, "adf");
         }
     }
