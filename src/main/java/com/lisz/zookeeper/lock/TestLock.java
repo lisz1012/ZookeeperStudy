@@ -36,11 +36,11 @@ public class TestLock {
                 watchCallback.tryLock();
                 //干活
                 System.out.println(threadName + " working..");
-                /*try {
+                try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }*/
+                }
                 //释放锁。就是删除临时有序节点并countdown，每次countdown其实就是放行
                 watchCallback.unLock();
             }).start();
